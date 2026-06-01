@@ -5,7 +5,7 @@ const CHANGELOGS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSTtiTUJ
 const HISTORY_KEY = "handoff-history-v1";
 
 const STATUS_OPTIONS = ["Handoff Ready", "In Progress", "In Review", "Pending", "Deprecated"];
-const PRODUCT_FILTER = ["All", "NewsPlus", "DJYPro", "Both"];
+const PRODUCT_FILTER = ["All", "Product 1", "Product 2", "Product 3"];
 
 const ss = {
   "Handoff Ready": { bg: "rgba(16,185,129,0.12)", text: "#34d399", dot: "#10b981" },
@@ -75,6 +75,7 @@ export default function App() {
   const [showCLForm, setShowCLForm]   = useState(false);
   const [clData, setCLData]           = useState({ title:"", description:"", author:"" });
   const [refreshing, setRefreshing]   = useState(false);
+  const [selectedCL, setSelectedCL]   = useState(null);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -373,7 +374,7 @@ export default function App() {
                     ? <div style={{padding:"24px 16px",textAlign:"center",color:"#27272a",fontSize:13}}>No change requests yet.</div>
                     : <div style={{display:"flex",flexDirection:"column",gap:8}}>
                         {featureLogs.map(cl=>(
-                          <div key={cl.id} style={{padding:"12px 14px",background:"#0c0c0f",border:"1px solid #18181b",borderRadius:10,borderLeft:"3px solid "+(cl.status==="Open"?"#f59e0b":"#10b981"),opacity:cl.status==="Resolved"?0.6:1}}>
+                          <div key={cl.id} onClick={()=>setSelectedCL({...cl, featureName: active.name, handoffUrl: active.handoffUrl})} style={{padding:"12px 14px",background:"#0c0c0f",border:"1px solid #18181b",borderRadius:10,borderLeft:"3px solid "+(cl.status==="Open"?"#f59e0b":"#10b981"),opacity:cl.status==="Resolved"?0.6:1,cursor:"pointer",transition:"border-color 0.2s"}} onMouseEnter={e=>e.currentTarget.style.borderColor="#27272a"} onMouseLeave={e=>e.currentTarget.style.borderColor="#18181b"}>
                             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                               <span style={{fontSize:13,fontWeight:600,color:"#e4e4e7",textDecoration:cl.status==="Resolved"?"line-through":"none"}}>{cl.title}</span>
                               <span style={{fontSize:9,fontWeight:600,padding:"2px 7px",borderRadius:10,textTransform:"uppercase",letterSpacing:"0.05em",fontFamily:"'DM Mono',monospace",background:cl.status==="Open"?"#f59e0b22":"#10b98122",color:cl.status==="Open"?"#fbbf24":"#34d399"}}>{cl.status}</span>
@@ -395,6 +396,48 @@ export default function App() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
+
+      {/* CHANGE REQUEST MODAL */}
+      {selectedCL && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)setSelectedCL(null);}}>
+          <div style={{width:480,background:"#0c0c0f",border:"1px solid #27272a",borderRadius:14,padding:"24px",position:"relative"}}>
+            <button onClick={()=>setSelectedCL(null)} style={{position:"absolute",top:16,right:16,background:"none",border:"none",cursor:"pointer",padding:4}}><Ic t="close" s={16} c="#52525b"/></button>
+
+            {/* Status badge */}
+            <span style={{fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20,display:"inline-flex",alignItems:"center",gap:5,marginBottom:12,background:selectedCL.status==="Open"?"#f59e0b22":"#10b98122",color:selectedCL.status==="Open"?"#fbbf24":"#34d399",border:"1px solid "+(selectedCL.status==="Open"?"#f59e0b33":"#10b98133"),fontFamily:"'DM Mono',monospace",fontSize:9,textTransform:"uppercase",letterSpacing:"0.05em"}}>
+              <span style={{width:5,height:5,borderRadius:"50%",background:selectedCL.status==="Open"?"#f59e0b":"#10b981"}}/>{selectedCL.status}
+            </span>
+
+            <h2 style={{fontSize:20,fontWeight:700,color:"#fafafa",margin:"0 0 16px",letterSpacing:"-0.02em"}}>{selectedCL.title}</h2>
+
+            {/* Applied to */}
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:10,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:"#3f3f46",marginBottom:6,fontFamily:"'DM Mono',monospace"}}>Applied to</div>
+              <div style={{padding:"10px 12px",background:"#18181b",border:"1px solid #27272a",borderRadius:8,fontSize:13,color:"#a1a1aa"}}>{selectedCL.featureName}</div>
+            </div>
+
+            {/* Description */}
+            {selectedCL.description && (
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:10,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:"#3f3f46",marginBottom:6,fontFamily:"'DM Mono',monospace"}}>Change Description</div>
+                <div style={{padding:"12px 14px",background:"#18181b",border:"1px solid #27272a",borderRadius:8,fontSize:13,color:"#a1a1aa",lineHeight:1.7}}>{selectedCL.description}</div>
+              </div>
+            )}
+
+            {/* Figma link */}
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:10,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:"#3f3f46",marginBottom:6,fontFamily:"'DM Mono',monospace"}}>Figma Reference</div>
+              {selectedCL.handoffUrl
+                ? <a href={selectedCL.handoffUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#18181b",border:"1px solid #27272a",borderRadius:8,textDecoration:"none",fontSize:13,color:"#34d399",fontWeight:600}} onMouseEnter={e=>e.currentTarget.style.borderColor="#3f3f46"} onMouseLeave={e=>e.currentTarget.style.borderColor="#27272a"}>
+                    <Ic t="doc" s={16} c="#34d399"/> Open Handoff in Figma <Ic t="arrow" s={13} c="#3f3f46"/>
+                  </a>
+                : <div style={{padding:"10px 14px",background:"#18181b",border:"1px solid #1f1f1f",borderRadius:8,fontSize:13,color:"#3f3f46"}}>No Figma link added yet</div>}
+            </div>
+
+            {/* Author / date */}
+            <div style={{display:"flex",gap:8,fontSize:11,color:"#3f3f46",fontFamily:"'DM Mono',monospace",paddingTop:12,borderTop:"1px solid #18181b"}}>
+              <span>{selectedCL.author}</span><span>{"\u00B7"}</span><span>{fmt(selectedCL.date)}</span>
+            </div>
+          </div>
+        </div>
+      )}

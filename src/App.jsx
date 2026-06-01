@@ -434,6 +434,7 @@ export default function App() {
                 : <div style={{padding:"10px 14px",background:"#18181b",border:"1px solid #1f1f1f",borderRadius:8,fontSize:13,color:"#3f3f46"}}>No Figma link added yet</div>}
             </div>
 
+
             {/* Author / date */}
             <div style={{display:"flex",gap:8,fontSize:11,color:"#3f3f46",fontFamily:"'DM Mono',monospace",paddingTop:12,borderTop:"1px solid #18181b"}}>
               <span>{selectedCL.author}</span><span>{"\u00B7"}</span><span>{fmt(selectedCL.date)}</span>
